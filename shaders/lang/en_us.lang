@@ -1,0 +1,7 @@
+option.ACCUMULATION_TYPE = Accumulation type
+value.ACCUMULATION_TYPE.0 = Infinite accumulation
+value.ACCUMULATION_TYPE.1 = Reprojection
+
+option.RAY_BOUNCES = Bounce count
+
+option.ACCUMULATION_LENGTH = Accumulation length
