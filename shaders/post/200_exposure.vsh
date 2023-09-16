@@ -36,7 +36,7 @@ void main() {
         for (int i = 0; i < samples.length(); i++) {
             luminanceSum += luminance(texture(colortex0, samples[i].position).rgb) * samples[i].weight;
         }
-        float exposure = calculateExposure(luminanceSum);
+        float exposure = clamp(calculateExposure(luminanceSum), 1.0, 500000.0);
         if (frameCounter <= 1) {
             avgExposure = exposure;
         } else {
@@ -45,7 +45,6 @@ void main() {
                 log(exposure), 
                 max(1.0 / float(frameCounter + 1), 0.005)
             ));
-            avgExposure = clamp(avgExposure, 0.0001, 500000.0);
         }
     }
 
