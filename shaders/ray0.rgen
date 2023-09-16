@@ -9,15 +9,23 @@
 #include "/lib/rand.glsl"
 #include "/lib/constants.glsl"
 #include "/lib/settings.glsl"
+#include "/lib/light_color.glsl"
+#include "/lib/colors.glsl"
 
-const vec3 SKY_COLOR = vec3(0.0112, 0.1273, 1.0) * 300.0;
-const vec3 SUN_COLOR = vec3(1.0) * 1000.0;
+const float SPHERE_SOLID_ANGLE = 4.0 * PI;
+const float SUN_SOLID_ANGLE = 6.794e-5;
+const float MOON_SOLID_ANGLE = 6.418e-5;
+const float SKY_INTENSITY = 0.8;
+const float SUN_INTENSITY = 398110.0 * SUN_SOLID_ANGLE / SPHERE_SOLID_ANGLE;
+const float MOON_INTENSITY = 1.0 * MOON_SOLID_ANGLE / SPHERE_SOLID_ANGLE;
+const float EMISSION_INTENSITY = 0.55;
 const vec3 WATER_ABSORPTION = (1.0 - vec3(0.28, 0.44, 0.86)) * 0.05;
 
 layout(std140, binding = 0) uniform CameraInfo {
     vec3 corners[4];
     mat4 viewInverse;
-    vec3 sunAngle;
+    vec4 sunPosition;
+    vec4 moonPosition;
     uint frameId;
     uint flags;
 } cam;
@@ -51,6 +59,9 @@ void main() {
     bool translucent = (cam.flags & 3u) == 1u;
     vec3 absorption = translucent ? WATER_ABSORPTION : vec3(0.0);
 
+    vec3 sunDir = normalize(mat3(cam.viewInverse) * cam.sunPosition.xyz);
+    vec3 moonDir = normalize(mat3(cam.viewInverse) * cam.moonPosition.xyz);
+
     vec3 throughput = vec3(1.0);
     vec3 radiance = vec3(0.0);
     for (int i = 0; i < RAY_BOUNCES; i++) {
@@ -76,32 +87,34 @@ void main() {
         }
 
         if (t < 0.0) {
-            radiance += throughput * SKY_COLOR;
+            radiance += throughput * getSkyColor(direction, sunDir) * SKY_INTENSITY;
             break;
         }
 
-        radiance += throughput * hitPayload.color.rgb * hitPayload.emission;
+        radiance += throughput * hitPayload.color.rgb * hitPayload.emission * EMISSION_INTENSITY;
         origin = hitPayload.hitData.xyz;
 
-        vec3 sunDir = normalize(vec3(1, 3, 2));
-        sunDir = mix(cosineWeightedHemisphereSample(sunDir), sunDir, 0.95);
-        if (hitPayload.color.a == 1.0 && dot(hitPayload.geometryNormal, sunDir) > 0.0) {
-            float cosTheta = dot(hitPayload.normal, sunDir);
+        bool moon = (randFloat() * 0.2 - 0.1) > sunDir.y;
+        vec3 lightDir = moon ? moonDir : sunDir;
+        vec3 coneLightDir = mix(cosineWeightedHemisphereSample(lightDir), lightDir, 0.95);
+        if (hitPayload.color.a == 1.0 && dot(hitPayload.geometryNormal, coneLightDir) > 0.0) {
+            float cosTheta = dot(hitPayload.normal, coneLightDir);
             traceRayEXT(
                 acc, // acceleration structure
-                rayFlags | gl_RayFlagsOpaqueEXT, // rayFlags
+                rayFlags, // rayFlags
                 0xFF, // cullMask
                 0, // sbtRecordOffset // <- see comment [1] below
                 0, // sbtRecordStride // <- see comment [1] below
                 0, // missIndex
                 origin,       // ray origin
                 tMin, // ray min range
-                sunDir, // ray direction
+                coneLightDir, // ray direction
                 tMax, // ray max range
                 6// payload (location = 6)
             );
             if (payload.hitData.w < 0.0) {
-                radiance += hitPayload.color.rgb * throughput * cosTheta * SUN_COLOR / PI;
+                vec3 light = moon ? vec3(0.1) * MOON_INTENSITY : getSunColor(sunDir) * SUN_INTENSITY;
+                radiance += hitPayload.color.rgb * throughput * cosTheta * light / PI;
             }
         }
 
@@ -138,6 +151,12 @@ void main() {
             }
             throughput *= hitPayload.color.rgb;
         }
+
+        float throughputLuma = luminance(throughput);
+        if (randFloat() > throughputLuma) {
+            break;
+        }
+        throughput /= throughputLuma;
     }
 
     imageStore(outImage, ivec2(gl_LaunchIDEXT), vec4(radiance, 1.0));

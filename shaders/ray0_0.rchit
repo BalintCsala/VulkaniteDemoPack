@@ -64,5 +64,5 @@ void main() {
     payload.hitData = vec4(worldPos, gl_HitTEXT);
     payload.geometryNormal = fragInfo.normal;
     payload.normal = normalVec;
-    payload.emission = specular.a < 1.0 ? specular.a * 50.0 : 0.0;
+    payload.emission = specular.a < 1.0 ? specular.a : 0.0;
 }

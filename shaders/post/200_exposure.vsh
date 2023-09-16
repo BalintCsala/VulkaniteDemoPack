@@ -37,17 +37,15 @@ void main() {
             luminanceSum += luminance(texture(colortex0, samples[i].position).rgb) * samples[i].weight;
         }
         float exposure = calculateExposure(luminanceSum);
-        if (frameCounter == 1) {
+        if (frameCounter <= 1) {
             avgExposure = exposure;
         } else {
-            #if ACCUMULATION_TYPE != 0
-                avgExposure = exp(mix(
-                    log(avgExposure), 
-                    log(exposure), 
-                    max(1.0 / float(frameCounter + 1), 0.01)
-                ));
-                avgExposure = clamp(avgExposure, 0.005, 5.0);
-            #endif
+            avgExposure = exp(mix(
+                log(avgExposure), 
+                log(exposure), 
+                max(1.0 / float(frameCounter + 1), 0.005)
+            ));
+            avgExposure = clamp(avgExposure, 0.0001, 500000.0);
         }
     }
 
