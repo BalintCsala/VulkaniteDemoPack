@@ -11,7 +11,7 @@ uniform int frameCounter;
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
-uniform sampler2D depthtex1;
+uniform sampler2D depthtex0;
 
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
@@ -50,12 +50,12 @@ vec3 reproject(vec3 screenPos) {
 }
 
 void main() {
-    vec3 screenPos = vec3(texCoord, texture(depthtex1, texCoord).x);
+    vec3 screenPos = vec3(texCoord, texture(depthtex0, texCoord).x);
     vec4 currColor = texture(colortex0, texCoord);
     vec4 newColor;
     #if ACCUMULATION_TYPE == 0
         vec4 prevColor = texture(colortex1, texCoord);
-        newColor = mix(prevColor, currColor, 1.0 / float(frameCounter + 1));
+        newColor = mix(prevColor, currColor, 1.0 / float(frameCounter));
     #elif ACCUMULATION_TYPE == 1
         vec3 prevScreenPos = reproject(screenPos);
         float prevDepth = texture(colortex2, prevScreenPos.xy).x;
