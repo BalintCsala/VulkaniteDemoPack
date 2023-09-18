@@ -3,9 +3,11 @@
 
 uint state;
 
+// https://github.com/riccardoscalco/glsl-pcg-prng
 uint rand() {
-	state = (state << 13U) ^ state;
-    state = state * (state * state * 15731U + 789221U) + 1376312589U;
+	state = state * 747796405u + 2891336453u;
+	uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+	state = (word >> 22u) ^ word;
     return state;
 }
 

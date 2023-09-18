@@ -48,7 +48,7 @@ float fresnel(float cosTheta, float F0) {
 
 void main() {
     initRNG(uvec2(gl_LaunchIDEXT.xy), cam.frameId);
-    vec2  px        = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+    vec2  px        = vec2(gl_LaunchIDEXT.xy) + randVec2();
     vec2  p         = px / vec2(gl_LaunchSizeEXT.xy);
     vec3  origin    = cam.viewInverse[3].xyz;
     vec3  target    = mix(mix(cam.corners[0], cam.corners[2], p.y), mix(cam.corners[1], cam.corners[3], p.y), p.x);
@@ -131,12 +131,13 @@ void main() {
             if (dot(normal, direction) > 0.0) {
                 normal = -normal;
             }
+            
             float fres = fresnel(dot(-direction, normal), 0.02);
 
             if (randFloat() < fres) {
                 direction = reflect(direction, normal);
             } else {
-                vec3 newDirection = refract(direction, normal, translucent ? 1.3333 : 1.0 / 1.3333);
+                vec3 newDirection = refract(direction, normal, translucent ? 1.5 : 1.0 / 1.5);
                 if (dot(newDirection, newDirection) < 0.01) {
                     throughput /= fres;
                     newDirection = reflect(direction, normal);
@@ -149,7 +150,7 @@ void main() {
                     absorption = vec3(0.0);
                     translucent = false;
                 } else {
-                    absorption = (1.0 - hitPayload.color.rgb) * 1.0;
+                    absorption = (1.0 - hitPayload.color.rgb * hitPayload.color.rgb) * 1.0;
                     translucent = true;
                 }
             }
