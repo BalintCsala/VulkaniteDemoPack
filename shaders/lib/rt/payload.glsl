@@ -1,12 +1,12 @@
 #ifndef PAYLOAD_GLSL
 #define PAYLOAD_GLSL
 
+#include "/lib/pbr/material.glsl"
+
 struct Payload {
-    vec4 color;
     vec4 hitData;
     vec3 geometryNormal;
-    vec3 normal;
-    float emission;
+    Material material;
 };
 
 #endif // PAYLOAD_GLSL

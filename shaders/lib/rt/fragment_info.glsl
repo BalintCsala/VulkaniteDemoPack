@@ -5,9 +5,9 @@
 
 struct FragmentInfo {
     vec2 uv;
-    vec3 normal;
     vec3 tangent;
     vec3 bitangent;
+    vec3 normal;
 };
 
 vec2 getFragmentUV(Quad quad, vec3 baryCoords, bool isSideA) {
@@ -36,10 +36,12 @@ FragmentInfo getFragmentInfo(Quad quad, vec2 baryCoords) {
 
     vec3 barys = vec3(1.0 - baryCoords.x - baryCoords.y, baryCoords.x, baryCoords.y);
     vec2 uv = getFragmentUV(quad, barys, isSideA);
-    vec3 normal = n0 * barys.x + n1 * barys.y + n2 * barys.z;
-    vec3 tangent = t0 * barys.x + t1 * barys.y + t2 * barys.z;
+    vec3 normal = normalize(n0 * barys.x + n1 * barys.y + n2 * barys.z);
+    vec3 tangent = normalize(t0 * barys.x + t1 * barys.y + t2 * barys.z);
+    //vec3 normal = quad.vertices[0].normal / 128.0;
+    //vec3 tangent = quad.vertices[0].tangent.xyz / 128.0;
     vec3 bitangent = cross(tangent, normal) * (quad.vertices[0].tangent.w / 128.0);
-    return FragmentInfo(uv, normal, tangent, bitangent);
+    return FragmentInfo(uv, tangent, bitangent, normal);
 }
 
 #endif // FRAGMENT_INFO_GLSL

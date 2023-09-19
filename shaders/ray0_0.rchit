@@ -9,6 +9,7 @@
 #include "/lib/rt/data.glsl"
 #include "/lib/rt/payload.glsl"
 #include "/lib/rt/fragment_info.glsl"
+#include "/lib/pbr/material.glsl"
 
 layout(location = 6) rayPayloadInEXT Payload payload;
 
@@ -47,22 +48,16 @@ void main() {
 
     vec4 specular = texture(blockTexSpecular, fragInfo.uv);
     vec4 normal = texture(blockTexNormal, fragInfo.uv);
+    vec4 albedo = texture(blockTex, fragInfo.uv);
+    albedo.rgb = pow(albedo.rgb * shadeColor.rgb, vec3(2.2));
 
-    vec3 normalVec = normal.xyz * 2.0 - 1.0;
-    float len = dot(normalVec.xy, normalVec.xy);
-    if (len > 1.0) {
-        normalVec = fragInfo.normal;
-    } else {
-        normalVec.z = sqrt(1.0 - len);
-        
-        mat3 tbn = mat3(fragInfo.tangent, fragInfo.bitangent, fragInfo.normal);
-        normalVec = tbn * normalVec;
-    }
+    mat3 tbn = mat3(
+        fragInfo.tangent,
+        fragInfo.bitangent,
+        fragInfo.normal
+    );
 
-    payload.color = texture(blockTex, fragInfo.uv);
-    payload.color.rgb = pow(payload.color.rgb * shadeColor.rgb, vec3(2.2));
     payload.hitData = vec4(worldPos, gl_HitTEXT);
     payload.geometryNormal = fragInfo.normal;
-    payload.normal = normalVec;
-    payload.emission = specular.a < 1.0 ? specular.a : 0.0;
+    payload.material = getMaterial(albedo, normal, specular, tbn);
 }

@@ -5,13 +5,13 @@
 #extension GL_EXT_ray_tracing : enable
 
 #include "/lib/rt/payload.glsl"
-#include "/lib/rt/sampling.glsl"
 #include "/lib/rand.glsl"
 #include "/lib/constants.glsl"
 #include "/lib/settings.glsl"
 #include "/lib/light_color.glsl"
 #include "/lib/colors.glsl"
 #include "/lib/quaternions.glsl"
+#include "/lib/pbr/brdf.glsl"
 
 const float SPHERE_SOLID_ANGLE = 4.0 * PI;
 const float SUN_SOLID_ANGLE = 6.794e-5;
@@ -19,7 +19,6 @@ const float MOON_SOLID_ANGLE = 6.418e-5;
 const float SKY_INTENSITY = 0.8;
 const float SUN_INTENSITY = 398110.0 * SUN_SOLID_ANGLE / SPHERE_SOLID_ANGLE;
 const float MOON_INTENSITY = 1.0 * MOON_SOLID_ANGLE / SPHERE_SOLID_ANGLE;
-const float EMISSION_INTENSITY = 0.55;
 const vec3 WATER_ABSORPTION = (1.0 - vec3(0.28, 0.44, 0.86)) * 0.05;
 
 layout(std140, binding = 0) uniform CameraInfo {
@@ -41,10 +40,6 @@ layout(binding = 3) writeonly uniform image2D outImage;
 layout(binding = 4) uniform sampler2D blockTex;
 
 layout(location = 6) rayPayloadEXT Payload payload;
-
-float fresnel(float cosTheta, float F0) {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-}
 
 void main() {
     initRNG(uvec2(gl_LaunchIDEXT.xy), cam.frameId);
@@ -99,14 +94,14 @@ void main() {
             break;
         }
 
-        radiance += throughput * hitPayload.color.rgb * hitPayload.emission * EMISSION_INTENSITY;
+        radiance += throughput * hitPayload.material.emission;
         origin = hitPayload.hitData.xyz;
 
         bool moon = (randFloat() * 0.2 - 0.1) > sunDir.y;
         vec3 lightDir = moon ? moonDir : sunDir;
-        vec3 coneLightDir = mix(cosineWeightedHemisphereSample(lightDir), lightDir, 0.95);
-        if (hitPayload.color.a == 1.0 && dot(hitPayload.geometryNormal, coneLightDir) > 0.0) {
-            float cosTheta = max(dot(hitPayload.normal, coneLightDir), 0.0);
+        vec3 coneLightDir = mix(cosineWeighted(lightDir), lightDir, 0.95);
+        if (!hitPayload.material.translucent && dot(hitPayload.geometryNormal, coneLightDir) > 0.0) {
+            float cosTheta = max(dot(hitPayload.material.normal, coneLightDir), 0.0);
             traceRayEXT(
                 acc, // acceleration structure
                 rayFlags, // rayFlags
@@ -122,17 +117,18 @@ void main() {
             );
             if (payload.hitData.w < 0.0) {
                 vec3 light = moon ? vec3(0.1) * MOON_INTENSITY : getSunColor(sunDir) * SUN_INTENSITY;
-                radiance += hitPayload.color.rgb * throughput * cosTheta * light / PI;
+                // TODO: Direct brdf
+                radiance += hitPayload.material.albedo * throughput * cosTheta * light / PI;
             }
         }
 
-        if (hitPayload.color.a < 1.0) {
-            vec3 normal = hitPayload.normal;
+        if (hitPayload.material.translucent) {
+            vec3 normal = hitPayload.material.normal;
             if (dot(normal, direction) > 0.0) {
                 normal = -normal;
             }
             
-            float fres = fresnel(dot(-direction, normal), 0.02);
+            float fres = luminance(schlickFresnel(vec3(0.02), dot(-direction, normal)));
 
             if (randFloat() < fres) {
                 direction = reflect(direction, normal);
@@ -150,16 +146,17 @@ void main() {
                     absorption = vec3(0.0);
                     translucent = false;
                 } else {
-                    absorption = (1.0 - hitPayload.color.rgb * hitPayload.color.rgb) * 1.0;
+                    absorption = hitPayload.material.albedo * 5.5;
                     translucent = true;
                 }
             }
         } else {
-            direction = cosineWeightedHemisphereSample(hitPayload.normal);
+            BRDFSample brdfSample = sampleMaterial(-direction, hitPayload.material);
+            direction = brdfSample.direction;
             if (dot(direction, hitPayload.geometryNormal) <= 0.0) {
                 direction = -direction;
             }
-            throughput *= hitPayload.color.rgb;
+            throughput *= brdfSample.throughput;
         }
 
         float throughputLuma = luminance(throughput);
@@ -169,5 +166,8 @@ void main() {
         throughput /= throughputLuma;
     }
 
+    if (isnan(radiance.x)) {
+        radiance = vec3(1.0, 0.0, 1.0);
+    }
     imageStore(outImage, ivec2(gl_LaunchIDEXT), vec4(radiance, 1.0));
 }
