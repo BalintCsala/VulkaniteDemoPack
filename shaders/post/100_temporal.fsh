@@ -73,8 +73,11 @@ void main() {
         }
     #endif
 
+    if (any(isnan(newColor.rgb))) {
+        newColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+
     prevOutput = newColor;
     prevDepthOut = vec4(screenPos.z);
-
     fragColor = newColor;
 }

@@ -39,4 +39,5 @@ void main() {
     if (texColor.a < 0.1) {
         ignoreIntersectionEXT;
     }
+    payload.shadowTransmission *= texColor.rgb * (1.0 - texColor.a);
 }

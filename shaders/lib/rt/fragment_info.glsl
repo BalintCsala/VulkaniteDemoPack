@@ -26,20 +26,10 @@ vec2 getFragmentUV(Quad quad, vec2 baryCoords) {
 FragmentInfo getFragmentInfo(Quad quad, vec2 baryCoords) {
     bool isSideA = (gl_PrimitiveID & 1) == 0;
 
-    vec3 n0 = quad.vertices[0].normal / 128.0;
-    vec3 n1 = (isSideA ? quad.vertices[1].normal : quad.vertices[2].normal) / 128.0;
-    vec3 n2 = (isSideA ? quad.vertices[2].normal : quad.vertices[3].normal) / 128.0;
-
-    vec3 t0 = quad.vertices[0].tangent.xyz / 128.0;
-    vec3 t1 = (isSideA ? quad.vertices[1].tangent.xyz : quad.vertices[2].tangent.xyz) / 128.0;
-    vec3 t2 = (isSideA ? quad.vertices[2].tangent.xyz : quad.vertices[3].tangent.xyz) / 128.0;
-
     vec3 barys = vec3(1.0 - baryCoords.x - baryCoords.y, baryCoords.x, baryCoords.y);
     vec2 uv = getFragmentUV(quad, barys, isSideA);
-    vec3 normal = normalize(n0 * barys.x + n1 * barys.y + n2 * barys.z);
-    vec3 tangent = normalize(t0 * barys.x + t1 * barys.y + t2 * barys.z);
-    //vec3 normal = quad.vertices[0].normal / 128.0;
-    //vec3 tangent = quad.vertices[0].tangent.xyz / 128.0;
+    vec3 normal = quad.vertices[0].normal / 128.0;
+    vec3 tangent = quad.vertices[0].tangent.xyz / 128.0;
     vec3 bitangent = cross(tangent, normal) * (quad.vertices[0].tangent.w / 128.0);
     return FragmentInfo(uv, tangent, bitangent, normal);
 }

@@ -60,4 +60,5 @@ void main() {
     payload.hitData = vec4(worldPos, gl_HitTEXT);
     payload.geometryNormal = fragInfo.normal;
     payload.material = getMaterial(albedo, normal, specular, tbn);
+    payload.shadowTransmission *= albedo.rgb * (1.0 - albedo.a);
 }

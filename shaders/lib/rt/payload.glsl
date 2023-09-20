@@ -6,6 +6,7 @@
 struct Payload {
     vec4 hitData;
     vec3 geometryNormal;
+    vec3 shadowTransmission;
     Material material;
 };
 

@@ -33,10 +33,10 @@ float geometrySmith(float NdotV, float NdotL, Material material) {
     return ggxG1Schlick(NdotV, k) * ggxG1Schlick(NdotL, k);
 }
 
-vec3 cookTorrance(float NdotH, float NdotV, float NdotL, Material material) {
+vec3 cookTorrance(float NdotH, float NdotV, float NdotL, float HdotL, Material material) {
     return ggxTrowbridgeReitz(NdotH, material) * 
             geometrySmith(NdotV, NdotL, material) * 
-            schlickFresnel(material.F0, NdotV) / (4.0 * NdotV * NdotL);
+            schlickFresnel(material.F0, HdotL) / (4.0 * NdotV * NdotL);
 }
 
 vec3 brdfDirect(vec3 view, vec3 light, Material material) {
@@ -44,10 +44,14 @@ vec3 brdfDirect(vec3 view, vec3 light, Material material) {
     float NdotL = max(dot(material.normal, light), 0.0);
     float NdotV = max(dot(material.normal, view), 0.0);
     float NdotH = max(dot(material.normal, halfway), 0.0);
-    float LdotV = dot(light, view);
-    vec3 diffuse = material.albedo / PI;
-    vec3 specular = cookTorrance(NdotH, NdotV, NdotL, material);
-    return (max(specular * mix(vec3(1.0), material.albedo, material.metallic), 0.0) + diffuse * (1.0 - material.metallic)) * NdotL;
+    float HdotL = max(dot(halfway, light), 0.0);
+
+    vec3 fresnelInternal = schlickFresnel(material.F0, NdotV);
+    vec3 fresnelTransmission = schlickFresnel(material.F0, NdotL);
+
+    vec3 diffuse = material.albedo / PI * (1.0 - material.metallic) * (1.0 - fresnelInternal) * (1.0 - fresnelTransmission);
+    vec3 specular = cookTorrance(NdotH, NdotV, NdotL, HdotL, material) * mix(vec3(1.0), material.albedo, material.metallic);
+    return (specular + diffuse) * NdotL;
 }
 
 float evaluateSpecularProbability(vec3 view, Material material) {
@@ -127,6 +131,9 @@ BRDFSample sampleMaterial(vec3 view, Material material) {
     if (randFloat() < specularProbability) {
         BRDFSample brdfSample = sampleSpecular(view, material);
         brdfSample.throughput /= specularProbability;
+        if (material.metallic > 0.5) {
+            brdfSample.throughput *= material.albedo;
+        }
         return brdfSample;
     } else {
         BRDFSample brdfSample = sampleDiffuse(view, material);
