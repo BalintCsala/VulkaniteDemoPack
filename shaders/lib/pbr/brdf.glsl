@@ -40,9 +40,12 @@ vec3 cookTorrance(float NdotH, float NdotV, float NdotL, float HdotL, Material m
 }
 
 vec3 brdfDirect(vec3 view, vec3 light, Material material) {
+    float NdotL = dot(material.normal, light);
+    float NdotV = dot(material.normal, view);
+    if (NdotL <= 0.0 || NdotV <= 0.0)
+        return vec3(0.0);
+
     vec3 halfway = normalize(view + light);
-    float NdotL = max(dot(material.normal, light), 0.0);
-    float NdotV = max(dot(material.normal, view), 0.0);
     float NdotH = max(dot(material.normal, halfway), 0.0);
     float HdotL = max(dot(halfway, light), 0.0);
 
@@ -119,7 +122,7 @@ BRDFSample sampleSpecular(vec3 view, Material material) {
     );
 }
 
-BRDFSample sampleDiffuse(vec3 view, Material material) {
+BRDFSample sampleDiffuse(Material material) {
     return BRDFSample(
         cosineWeighted(material.normal),
         material.albedo
@@ -136,7 +139,7 @@ BRDFSample sampleMaterial(vec3 view, Material material) {
         }
         return brdfSample;
     } else {
-        BRDFSample brdfSample = sampleDiffuse(view, material);
+        BRDFSample brdfSample = sampleDiffuse(material);
         brdfSample.throughput /= 1.0 - specularProbability;
         return brdfSample;
     }

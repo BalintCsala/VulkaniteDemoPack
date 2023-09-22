@@ -7,4 +7,17 @@
 
 const float sunPathRotation = 30.0;
 
+/*
+// Normals
+const int colortex3Format = RGBA32F;
+// Geometry normals
+const int colortex4Format = RGBA32F;
+
+const int colortex0Format = RGBA32F;
+const int colortex1Format = RGBA32F;
+const int colortex2Format = RGBA32F;
+const bool colortex1Clear = false;
+const bool colortex2Clear = false;
+*/
+
 #endif // SETTINGS_GLSL
