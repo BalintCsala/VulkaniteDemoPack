@@ -32,13 +32,9 @@ layout(std140, binding = 0) uniform CameraInfo {
 
 layout(binding = 1) uniform accelerationStructureEXT acc;
 
-layout(binding = 2) buffer BlasDataAddresses { 
-    uint64_t address[]; 
-} quadBlobs;
+layout(binding = 3) uniform sampler2D blockTex;
 
-layout(binding = 3) writeonly uniform image2D outImage;
-layout(binding = 4) uniform sampler2D blockTex;
-
+layout(binding = 6) writeonly uniform image2D outImage;
 layout(location = 6) rayPayloadEXT Payload payload;
 
 void main() {
