@@ -3,7 +3,7 @@
 
 #include "/lib/rt/data_point.glsl"
 
-layout(std430, set = 0, binding = 7) buffer RTOutputBuffer {
+layout(std430, set = 3, binding = 0) buffer RTOutputBuffer {
     DataPoint data[];
 } rtOutput; // Total: 1920 * 1080 * 2 * 80 = 331,776,000 bytes
 
