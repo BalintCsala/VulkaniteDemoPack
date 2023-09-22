@@ -14,7 +14,7 @@ struct Sample {
     float weight;
 };
 
-const Sample[] samples = Sample[](
+const Sample samples[] = Sample[](
     Sample(vec2(0.5, 0.5), 0.2),
     Sample(vec2(0.35, 0.5), 0.1),
     Sample(vec2(0.65, 0.5), 0.1),

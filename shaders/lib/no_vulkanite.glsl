@@ -137,7 +137,7 @@ void printChar(uint character) {
 }
 
 #define printString(string) {                                               \
-	uint[] characters = uint[] string;                                      \
+	uint characters[] = uint[] string;                                      \
 	for (int i = 0; i < characters.length(); ++i) printChar(characters[i]); \
 }
 
