@@ -203,9 +203,9 @@ void main() {
         throughput /= throughputLuma;
     }
 
-    /*if (any(isnan(radiance))) {
+    if (any(isnan(radiance))) {
         radiance = vec3(0.0);
-    }*/
+    }
 
     if (coord.y % 2u == 0u) {
         SHCoeffs coeffs = encodeSH(initialDirection, radiance);

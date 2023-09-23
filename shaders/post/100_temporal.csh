@@ -9,6 +9,7 @@ const vec2 workGroupsRender = vec2(0.5, 0.5);
 #include "/lib/denoising/temporal_helpers.glsl"
 
 #include "/lib/buffers/rt_output_iris.glsl"
+#include "/lib/buffers/sh_swap.glsl"
 
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
@@ -51,8 +52,7 @@ void main() {
     }
     vec3 screenPos = vec3(texCoord, depth);
 
-    uint index = getIndex(coord, uint(frameCounter));
-    SHCoeffs diffuseCoeffs = rtOutput.data[index].diffuse;
+    SHCoeffs diffuseCoeffs = rtOutput.data[getIndex(coord, uint(frameCounter))].diffuse;
 
     vec3 prevScreenPos = reproject(screenPos);
     TemporalData temporal = bilinearReadTemporalData(prevScreenPos.xy * halfRes, frameCounter, resolution);
@@ -68,10 +68,12 @@ void main() {
         SHCoeffs prevDiffuseCoeffs = sampleCoeffs(prevScreenPos.xy * halfRes, uint(frameCounter - 1));
 
         diffuseCoeffs = blendSH(prevDiffuseCoeffs, diffuseCoeffs, 1.0 / totalWeight);
-        rtOutput.data[index].diffuse = diffuseCoeffs;
         weight = totalWeight;
     } else {
         weight = 1.0;
     }
+    // We output diffuse to the swap buffer so that we can copy it back into
+    // rt output after the first SVGF step
+    shSwap.data[getSwapIndex(coord, 1u)] = diffuseCoeffs;
     writeTemporalData(TemporalData(depth, weight), coord, frameCounter, resolution);
 }

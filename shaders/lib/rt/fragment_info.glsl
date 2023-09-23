@@ -25,7 +25,6 @@ vec2 getFragmentUV(Quad quad, vec2 baryCoords) {
 
 FragmentInfo getFragmentInfo(Quad quad, vec2 baryCoords) {
     bool isSideA = (gl_PrimitiveID & 1) == 0;
-
     vec3 barys = vec3(1.0 - baryCoords.x - baryCoords.y, baryCoords.x, baryCoords.y);
     vec2 uv = getFragmentUV(quad, barys, isSideA);
     vec3 normal = quad.vertices[0].normal / 128.0;

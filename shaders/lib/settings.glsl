@@ -12,6 +12,8 @@ const float sunPathRotation = 30.0;
 const int colortex3Format = RGBA32F;
 // Geometry normals
 const int colortex4Format = RGBA32F;
+// Fragment position
+const int colortex5Format = RGBA32F;
 
 const int colortex0Format = RGBA32F;
 const int colortex1Format = RGBA32F;

@@ -5,7 +5,7 @@
 #else
 
 #include "/lib/tonemap.glsl"
-#include "/lib/buffers/rt_output_iris.glsl"
+#include "/lib/buffers/sh_swap.glsl"
 
 in vec2 texCoord;
 
@@ -27,10 +27,10 @@ void main() {
         return;
     }
     vec3 normal = texture(colortex3, texCoord).xyz;
-    SHCoeffs sh = rtOutput.data[getIndex(uvec2(gl_FragCoord.xy) / 2u, uint(frameCounter))].diffuse;
+    SHCoeffs sh = shSwap.data[getSwapIndex(uvec2(gl_FragCoord.xy) / 2u, 0u)];
 
     fragColor.a = 1.0;
-    fragColor.rgb = decodeSH(sh, normal);
+    fragColor.rgb = decodeSH(sh, normal) * 10.0;
     fragColor.rgb = ACESFilm(fragColor.rgb);
     fragColor.rgb = pow(fragColor.rgb, vec3(1.0 / 2.2));
 }

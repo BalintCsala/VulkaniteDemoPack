@@ -1,6 +1,6 @@
 #version 430
 
-#define STEP_SIZE 8
-#define SWAP
+const int STEP_SIZE = 8;
+#define SVGF_STEP 3
 
 #include "/post/150_svgf.glsl"
