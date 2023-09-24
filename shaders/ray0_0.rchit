@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
+#extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_shader_16bit_storage : require
@@ -13,13 +14,6 @@
 
 layout(location = 6) rayPayloadInEXT Payload payload;
 
-layout(buffer_reference) buffer Quads {
-    Quad quads[]; 
-};
-
-layout(buffer_reference) buffer BawBuffer {
-    uint8_t data[]; 
-};
 hitAttributeEXT vec2 baryCoord;
 
 layout(std140, binding = 0) uniform CameraInfo {
@@ -28,14 +22,16 @@ layout(std140, binding = 0) uniform CameraInfo {
     vec3 sunAngle;
 } cam;
 
-layout(binding = 2) buffer BlasDataAddresses { uint64_t address[]; } geometryReference;
+layout(binding = 3) uniform  sampler2D blockTex;
+layout(binding = 4) uniform  sampler2D blockTexNormal;
+layout(binding = 5) uniform  sampler2D blockTexSpecular;
 
-layout(binding = 4) uniform  sampler2D blockTex;
-layout(binding = 5) uniform  sampler2D blockTexNormal;
-layout(binding = 6) uniform  sampler2D blockTexSpecular;
+layout(set = 1, binding = 0) buffer Quads {
+    Quad quads[]; 
+} geometryBuffers[];
 
 Quad getRayQuad() {
-    return Quads(geometryReference.address[gl_InstanceCustomIndexEXT + gl_GeometryIndexEXT]).quads[gl_PrimitiveID>>1];
+    return geometryBuffers[nonuniformEXT(gl_InstanceCustomIndexEXT + gl_GeometryIndexEXT)].quads[gl_PrimitiveID>>1];
 }
 
 
